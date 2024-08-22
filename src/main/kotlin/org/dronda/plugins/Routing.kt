@@ -25,7 +25,7 @@ fun Application.configureRouting() {
             }
 
             if (stream != null) {
-                call.respondText(stream!!.decodeToString())
+                call.respondBytes(stream!!)
             } else {
                 call.respondText("Failed", status = HttpStatusCode.InternalServerError)
             }
