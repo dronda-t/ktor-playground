@@ -7,24 +7,25 @@ import io.ktor.server.application.*
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.util.asStream
-import java.io.InputStream
+import io.ktor.utils.io.readRemaining
+import kotlinx.io.readByteArray
 
 fun Application.configureRouting() {
     routing {
         post("/input") {
-            var stream: InputStream? = null
+            var stream: ByteArray? = null
             call.receiveMultipart().forEachPart { part ->
                 when (part) {
                     is PartData.FileItem -> {
-                        stream = part.provider().asStream()
+                        stream = part.provider().readRemaining().readByteArray()
                     }
+
                     else -> {}
                 }
             }
 
             if (stream != null) {
-                call.respondText(stream!!.readAllBytes().decodeToString())
+                call.respondText(stream!!.decodeToString())
             } else {
                 call.respondText("Failed", status = HttpStatusCode.InternalServerError)
             }
