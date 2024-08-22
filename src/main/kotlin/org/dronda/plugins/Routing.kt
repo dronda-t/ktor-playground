@@ -17,6 +17,7 @@ fun Application.configureRouting() {
             call.receiveMultipart().forEachPart { part ->
                 when (part) {
                     is PartData.FileItem -> {
+//                        stream = part.streamProvider().readAllBytes() // works in ktor 2.x.x
                         stream = part.provider().readRemaining().readByteArray()
                     }
 
