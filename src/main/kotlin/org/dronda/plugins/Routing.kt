@@ -1,34 +1,39 @@
 package org.dronda.plugins
 
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.PartData
-import io.ktor.http.content.forEachPart
 import io.ktor.server.application.*
-import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.utils.io.readRemaining
-import kotlinx.io.readByteArray
+import java.io.InputStream
 
 fun Application.configureRouting() {
-    routing {
-        post("/input") {
-            var stream: ByteArray? = null
-            call.receiveMultipart().forEachPart { part ->
-                when (part) {
-                    is PartData.FileItem -> {
-//                        stream = part.streamProvider().readAllBytes() // works in ktor 2.x.x
-                        stream = part.provider().readRemaining().readByteArray()
+    val byteCount = 1_000_000_000
+    fun testStream(): InputStream {
+        return object : InputStream() {
+            val sequence = sequence {
+                var count = byteCount
+                while (true) {
+                    if (--count >= 0) {
+                        yield(1)
+                    } else {
+                        yield(-1)
                     }
-
-                    else -> {}
                 }
+            }.iterator()
+
+            override fun read(): Int {
+                return sequence.next()
             }
 
-            if (stream != null) {
-                call.respondBytes(stream!!)
-            } else {
-                call.respondText("Failed", status = HttpStatusCode.InternalServerError)
+        }
+    }
+
+    routing {
+        get("/test") {
+            call.respondOutputStream(
+                status = HttpStatusCode.OK,
+            ) {
+                testStream().buffered().transferTo(this)
             }
         }
     }
